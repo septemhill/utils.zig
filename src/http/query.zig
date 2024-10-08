@@ -12,22 +12,13 @@ fn ArenaAlloc(comptime T: type) type {
     };
 }
 
-const EncodedQueryString = struct {
-    arena: std.heap.ArenaAllocator,
-    data: []const u8,
-
-    fn deinit(self: EncodedQueryString) void {
-        self.arena.deinit();
-    }
-};
-
 pub fn Pair(comptime FIRST: type, comptime SECOND: type) type {
     return struct { FIRST, SECOND };
 }
 
 pub const Values = Pair([]const u8, []const u8);
 
-pub fn encode(alloc: std.mem.Allocator, values: []const Values) !EncodedQueryString {
+pub fn encode(alloc: std.mem.Allocator, values: []const Values) !ArenaAlloc([]const u8) {
     var arena = std.heap.ArenaAllocator.init(alloc);
     var builder = std.ArrayList(u8).init(arena.allocator());
     defer builder.deinit();
@@ -47,7 +38,7 @@ pub fn encode(alloc: std.mem.Allocator, values: []const Values) !EncodedQueryStr
         }
     }
 
-    return EncodedQueryString{
+    return .{
         .arena = arena,
         .data = try builder.toOwnedSlice(),
     };
@@ -139,6 +130,14 @@ test "decode query string" {
         .{
             .url = "https://ziglang.org/",
             .expected = null,
+        },
+        .{
+            .url = "?data=123&sample=ghost&pointer",
+            .expected = &.{
+                .{ "pointer", "" },
+                .{ "sample", "ghost" },
+                .{ "data", "123" },
+            },
         },
     };
 
