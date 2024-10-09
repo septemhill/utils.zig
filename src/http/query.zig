@@ -76,7 +76,7 @@ test "encode testing" {
 
 fn decode(alloc: std.mem.Allocator, url: []const u8) !?ArenaAlloc([]Values) {
     const start_index = std.mem.indexOf(u8, url, "?") orelse return null;
-    var pairs = std.mem.splitBackwardsScalar(u8, url[start_index + 1 ..], '&');
+    var pairs = std.mem.tokenizeScalar(u8, url[start_index + 1 ..], '&');
 
     var arena = std.heap.ArenaAllocator.init(alloc);
     var builder = std.ArrayList(Values).init(arena.allocator());
@@ -108,8 +108,8 @@ test "decode query string" {
         .{
             .url = "https://ziglang.org/?a=1&b=2",
             .expected = &.{
-                .{ "b", "2" },
                 .{ "a", "1" },
+                .{ "b", "2" },
             },
         },
         .{
@@ -121,10 +121,10 @@ test "decode query string" {
         .{
             .url = "https://ziglang.org/?a=1&b=2&c&d=3",
             .expected = &.{
-                .{ "d", "3" },
-                .{ "c", "" },
-                .{ "b", "2" },
                 .{ "a", "1" },
+                .{ "b", "2" },
+                .{ "c", "" },
+                .{ "d", "3" },
             },
         },
         .{
@@ -134,9 +134,9 @@ test "decode query string" {
         .{
             .url = "?data=123&sample=ghost&pointer",
             .expected = &.{
-                .{ "pointer", "" },
-                .{ "sample", "ghost" },
                 .{ "data", "123" },
+                .{ "sample", "ghost" },
+                .{ "pointer", "" },
             },
         },
     };
